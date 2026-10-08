@@ -1,0 +1,36 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+contract DigitalRegistry {
+    struct Record {
+        address owner;
+        string metadataURI; // مثل لینک یا توضیحات سند
+        uint256 timestamp;
+    }
+
+    // نگهداری اطلاعات بر اساس هش فایل یا سند
+    mapping(bytes32 => Record) public records;
+
+    event RecordRegistered(bytes32 indexed documentHash, address indexed owner, string metadataURI, uint256 timestamp);
+
+    // ثبت یک سند جدید با استفاده از هش آن
+    function registerDocument(bytes32 documentHash, string memory metadataURI) external {
+        require(records[documentHash].owner == address(0), "Document already registered");
+        require(documentHash != bytes32(0), "Invalid document hash");
+
+        records[documentHash] = Record({
+            owner: msg.sender,
+            metadataURI: metadataURI,
+            timestamp: block.timestamp
+        });
+
+        emit RecordRegistered(documentHash, msg.sender, metadataURI, block.timestamp);
+    }
+
+    // بررسی اینکه آیا سند ثبت شده و مالک آن کیست
+    function verifyDocument(bytes32 documentHash) external view returns (address owner, string memory metadataURI, uint256 timestamp) {
+        Record memory rec = records[documentHash];
+        require(rec.owner != address(0), "Document not found");
+        return (rec.owner, rec.metadataURI, rec.timestamp);
+    }
+}
